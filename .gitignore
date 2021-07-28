@@ -1,0 +1,5 @@
+**/extensions
+**/pycache
+*.pyi
+database
+argv.json
