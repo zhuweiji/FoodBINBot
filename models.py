@@ -3,12 +3,13 @@ import uuid
 
 
 class DAO:
+    """ Database Access Object, consolidating all Database Access logic into one single source"""
     con = sqlite3.connect('datastore.db')
     cur = con.cursor()
 
     @classmethod
     def insert(cls, table, *values):
-        """ Insert a new row into the database, and returns an Exception if operation fails"""
+        """ Insert a new row into the database, and returns an Exception instance if operation fails"""
         VALUES = ""
         for index, i in enumerate(list(map(str, values))):
             VALUES += f"'{i}'"
@@ -21,6 +22,14 @@ class DAO:
             
     @classmethod
     def select(cls, table, columns=None, condition=None):
+        """ Selects rows from a table with SQL SELECT FROM WHERE syntax 
+        Args:
+            table: table name in database
+            columns: Column names of database to select
+            condition: SQL WHERE condition (eg. food='Hokkien Mee';)
+            
+            returns rows which match the conditions
+            """
         columns = columns or '*'
         query = f"SELECT {columns} FROM {table}"
         if condition:
@@ -33,6 +42,7 @@ class DAO:
 
     @classmethod
     def delete_table(cls, table):
+        """ Delete table in database """
         query = f"DROP TABLE {table}"
         result = cls.raw_query(query)
         print(result)
@@ -40,6 +50,7 @@ class DAO:
 
     @classmethod
     def check_table_exists(cls, table):
+        """ Check if the table exists in the database and return matching tables"""
         query = f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}';"
         result = cls.raw_query(query) 
         if not isinstance(result, Exception):
@@ -52,7 +63,7 @@ class DAO:
     def raw_query(cls, QUERY: str):
         """ Makes raw SQL query to the sqlite3 database.
             args: SQL string
-            return: True if transaction is successful, returns an Exception otherwise"""
+            return: True if transaction is successful, otherwise returns an Exception instance"""
         try:
             result = cls.cur.execute(QUERY)
             cls.con.commit()
