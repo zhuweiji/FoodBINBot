@@ -70,24 +70,30 @@ class DAO:
 
     @classmethod
     def insert(cls, table, *values):
-        VALUES = ""
-        for index, i in enumerate(list(map(str, values))):
-            VALUES += f"'{i}'"
-            if index < len(values)-1:
-                VALUES += ','
+        try:
+            VALUES = ""
+            for index, i in enumerate(list(map(str, values))):
+                VALUES += f"'{i}'"
+                if index < len(values)-1:
+                    VALUES += ','
 
-        QUERY = f"INSERT INTO {table} Values({VALUES})"
-        cls.raw_query(QUERY)
+            QUERY = f"INSERT INTO {table} Values({VALUES})"
+            cls.raw_query(QUERY)
+        except Exception as E:
+            return E
 
     @classmethod
     def select(cls, table, columns=None, condition=None):
-        columns = columns or '*'
-        QUERY = f"SELECT {columns} FROM {table}"
-        if condition:
-            QUERY += f" WHERE {condition}"
-        print(QUERY)
-        result = cls.cur.execute(QUERY)
-        return [row for row in result]
+        try:
+            columns = columns or '*'
+            QUERY = f"SELECT {columns} FROM {table}"
+            if condition:
+                QUERY += f" WHERE {condition}"
+            print(QUERY)
+            result = cls.cur.execute(QUERY)
+            return [row for row in result]
+        except Exception as E:
+            return E
 
     @classmethod
     def raw_query(cls, QUERY: str):
