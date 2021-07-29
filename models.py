@@ -66,12 +66,12 @@ class FoodDate:
     db_table_name = 'FoodDate'
     fact_attributes = ['id','food','location','location_link','cuisine']
 
-    def __init__(self, food_name=None, location=None, link=None, reservation=None, cuisine=None) -> None:
+    def __init__(self, id=None,  food_name=None, location=None, link=None, reservation=None, cuisine=None) -> None:
         if not food_name and location:
             raise ValueError('Either food name or location must be entered.')
 
-        self.id = uuid.uuid4()
-        self.food = Food(name=food_name)
+        self.id = id or str(uuid.uuid4())      # Create unique ID for a FoodDate instance
+        self.food = Food(name=food_name) if food_name else None
         self.location = location
         self.location_link = link #google maps location
         self.reservation = reservation # reservation date and time
@@ -79,7 +79,6 @@ class FoodDate:
         self.cuisine = cuisine
         self.visited = False
 
-        # TODO make persistent database that can share data across users
         # TODO send reservation messages to other users
         # TODO add reservation date and time function to bot
         # TODO fix google map links
@@ -104,8 +103,17 @@ class FoodDate:
         return self.__str__
 
     def add_to_db(self):
-        instance_values = list(vars(self).values())[:-1]    # self.visited not tracked in db
-        res = DAO.insert(self.db_table_name, *instance_values)
+        #  ['id','food','location','location_link','cuisine']
+        id = self.id
+        food = str(self.food) or ''
+        location = self.location or ''
+        location_link = self.location_link or ''
+        cuisine = self.cuisine or ''
+        
+        fact_values = [id, food, location, location_link, cuisine]
+        assert len(fact_values) == len(self.fact_attributes), "The number of columns in the data being inserted must be equal the number of columns of this object in the database"
+
+        res = DAO.insert(self.db_table_name, id, food, location, location_link, cuisine)
         if isinstance(res, Exception):
             raise res
 
@@ -114,6 +122,7 @@ class FoodDate:
         res = DAO.select(cls.db_table_name)
         if isinstance(res, Exception):
             raise res
+        return res
 
     def get_self_fm_db(self):
         DAO.select(self.db_table_name, condition=f"id={self.id}")
