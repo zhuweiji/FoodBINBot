@@ -1,7 +1,5 @@
+import sqlite3
 
-foodDate1 = FoodDate(name='')
-foodDate1.people_invited = User()
-foodDate1.location_link = 'google.maps.A1'
 
 class FoodDate:
     def __init__(self, food_name=None, location=None, link=None, reservation=None, cuisine=None) -> None:
@@ -62,3 +60,36 @@ class Cuisine:
 
     def __str__(self) -> str:
         return self.name
+
+
+class DAO:
+    con = sqlite3.connect('datastore.db')
+    cur = con.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS FoodDate
+               (food, location, location_link, reservation, people_invited, cuisine)''')
+
+    @classmethod
+    def insert(cls, table, *values):
+        VALUES = ""
+        for index, i in enumerate(list(map(str, values))):
+            VALUES += f"'{i}'"
+            if index < len(values)-1:
+                VALUES += ','
+
+        QUERY = f"INSERT INTO {table} Values({VALUES})"
+        cls.raw_query(QUERY)
+
+    @classmethod
+    def select(cls, table, columns=None, condition=None):
+        columns = columns or '*'
+        QUERY = f"SELECT {columns} FROM {table}"
+        if condition:
+            QUERY += f" WHERE {condition}"
+        print(QUERY)
+        result = cls.cur.execute(QUERY)
+        return [row for row in result]
+
+    @classmethod
+    def raw_query(cls, QUERY: str):
+        cls.cur.execute(QUERY)
+        cls.con.commit()

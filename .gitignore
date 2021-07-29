@@ -1,5 +1,8 @@
 **/extensions
-**/pycache
+**/__pycache__/
+**.vscode
+**.db
 *.pyi
 database
 argv.json
+secrets.py

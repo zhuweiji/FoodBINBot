@@ -76,8 +76,7 @@ def manual_chosen(update: Update, context: CallbackContext) -> int:
 def enter_manual_name(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     create_or_update(context.user_data, 'temp', text)
-    update.message.reply_text(
-        f"For the date's location, you have entered {text}")
+    update.message.reply_text(f"For the date's location, you have entered {text}")
     update.message.reply_text('Please enter the food:')
 
     return MANUALNAME
