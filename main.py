@@ -1,5 +1,6 @@
 import logging
 import random
+import secrets
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (
@@ -21,6 +22,10 @@ from adding_food import *
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+
+
+def start(update: Update, context: CallbackContext):
+    pass
 
 def get_all(update: Update, context: CallbackContext) -> int:
     """ get all foodDates stored in a user's user_data and display it"""
@@ -45,7 +50,7 @@ def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
     persistence = PicklePersistence(filename='conversationbot')
-    updater = Updater("", persistence=persistence)
+    updater = Updater(secrets.get_token(), persistence=persistence)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
