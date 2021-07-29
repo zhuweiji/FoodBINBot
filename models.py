@@ -1,11 +1,76 @@
 import sqlite3
+import uuid
+
+
+class DAO:
+    con = sqlite3.connect('datastore.db')
+    cur = con.cursor()
+
+    @classmethod
+    def insert(cls, table, *values):
+        """ Insert a new row into the database, and returns an Exception if operation fails"""
+        VALUES = ""
+        for index, i in enumerate(list(map(str, values))):
+            VALUES += f"'{i}'"
+            if index < len(values)-1:
+                VALUES += ','
+
+        query = f"INSERT INTO {table} Values({VALUES})"
+        result = cls.raw_query(query)
+        return True if not isinstance(result, Exception) else result
+            
+    @classmethod
+    def select(cls, table, columns=None, condition=None):
+        columns = columns or '*'
+        query = f"SELECT {columns} FROM {table}"
+        if condition:
+            query += f" WHERE {condition}"
+        result = cls.raw_query(query)
+        if not isinstance(result, Exception):
+            return [row for row in result]
+        else:
+            return result
+
+    @classmethod
+    def delete_table(cls, table):
+        query = f"DROP TABLE {table}"
+        result = cls.raw_query(query)
+        print(result)
+        return True if not isinstance(result, Exception) else result
+
+    @classmethod
+    def check_table_exists(cls, table):
+        query = f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}';"
+        result = cls.raw_query(query) 
+        if not isinstance(result, Exception):
+            return result.fetchall()
+        else:
+            return result
+
+
+    @classmethod
+    def raw_query(cls, QUERY: str):
+        """ Makes raw SQL query to the sqlite3 database.
+            args: SQL string
+            return: True if transaction is successful, returns an Exception otherwise"""
+        try:
+            result = cls.cur.execute(QUERY)
+            cls.con.commit()
+            return result
+        except Exception as E:
+            print(f'Exception {E} raised on insert operation\n Query:{QUERY}')
+            return E
 
 
 class FoodDate:
+    db_table_name = 'FoodDate'
+    fact_attributes = ['id','food','location','location_link','cuisine']
+
     def __init__(self, food_name=None, location=None, link=None, reservation=None, cuisine=None) -> None:
         if not food_name and location:
             raise ValueError('Either food name or location must be entered.')
 
+        self.id = uuid.uuid4()
         self.food = Food(name=food_name)
         self.location = location
         self.location_link = link #google maps location
@@ -22,6 +87,10 @@ class FoodDate:
         # TODO send payment requests to people in food date
         # TODO keep track of outstanding requests
 
+    @classmethod
+    def db_initalise(cls):
+        DAO.raw_query(f"CREATE TABLE IF NOT EXISTS FoodDate ({','.join(FoodDate().fact_attributes)})")
+
     def visit(self):
         self.visited = True
 
@@ -34,6 +103,25 @@ class FoodDate:
     def make_str(self):
         return self.__str__
 
+    def add_to_db(self):
+        instance_values = list(vars(self).values())[:-1]    # self.visited not tracked in db
+        res = DAO.insert(self.db_table_name, *instance_values)
+        if isinstance(res, Exception):
+            raise res
+
+    @classmethod
+    def get_all_db(cls):
+        res = DAO.select(cls.db_table_name)
+        if isinstance(res, Exception):
+            raise res
+
+    def get_self_fm_db(self):
+        DAO.select(self.db_table_name, condition=f"id={self.id}")
+    
+    @classmethod
+    def get_fm_db_with_id(cls, id):
+        DAO.select(cls.db_table_name, condition=f"id={id}")
+
 
 class Food:
     def __init__(self, name=None, price=None) -> None:
@@ -41,6 +129,9 @@ class Food:
         self.price = price
 
     def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
         return self.name
 
 
@@ -59,43 +150,7 @@ class Cuisine:
         self.foods = [i for i in self.foods if i is not food]
 
     def __str__(self) -> str:
-        return self.name
+        return str(self.name)
 
 
-class DAO:
-    con = sqlite3.connect('datastore.db')
-    cur = con.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS FoodDate
-               (food, location, location_link, reservation, people_invited, cuisine)''')
-
-    @classmethod
-    def insert(cls, table, *values):
-        try:
-            VALUES = ""
-            for index, i in enumerate(list(map(str, values))):
-                VALUES += f"'{i}'"
-                if index < len(values)-1:
-                    VALUES += ','
-
-            QUERY = f"INSERT INTO {table} Values({VALUES})"
-            cls.raw_query(QUERY)
-        except Exception as E:
-            return E
-
-    @classmethod
-    def select(cls, table, columns=None, condition=None):
-        try:
-            columns = columns or '*'
-            QUERY = f"SELECT {columns} FROM {table}"
-            if condition:
-                QUERY += f" WHERE {condition}"
-            print(QUERY)
-            result = cls.cur.execute(QUERY)
-            return [row for row in result]
-        except Exception as E:
-            return E
-
-    @classmethod
-    def raw_query(cls, QUERY: str):
-        cls.cur.execute(QUERY)
-        cls.con.commit()
+FoodDate.db_initalise()
